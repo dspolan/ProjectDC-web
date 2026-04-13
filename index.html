@@ -1,30 +1,151 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Final Project DC</title>
-    <link rel="icon" type="image/png" href= href="image/icon.png">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proyecto Final Circuitos DC 2026-1 – USCO</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="main-container">
-        <h1>Temperatura Realtime</h1>
-        <div id="status-label" class="status">Conectando...</div>
-        
-        <div class="card">
-            <div class="temp-wrapper">
-                <span id="temp-val">--</span>
-                <span class="unit">°C</span>
-            </div>
+  <!-- ══════════════════════════════════════════════
+       HEADER INSTITUCIONAL
+  ══════════════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-inner">
+
+      <!-- Logo USCO -->
+      <div class="logo-wrap">
+        <img
+          src="logo-usco.png"
+          alt="Universidad Surcolombiana"
+          class="logo-img"
+          onerror="this.style.display='none'; document.querySelector('.logo-text').style.display='flex';"
+        />
+        <!-- Fallback texto si no hay logo-usco.png en el repo -->
+        <div class="logo-text" style="display:none;">
+          <span class="logo-text-main">USCO</span>
+          <span class="logo-text-sub">Universidad Surcolombiana</span>
+          <span class="logo-text-sub">Facultad de Ingeniería</span>
         </div>
-        
-        <p class="footer">Actualización cada 1.5s</p>
+      </div>
+
+      <!-- Título y autores -->
+      <div class="header-info">
+        <h1 class="header-title">Proyecto Final Circuitos DC 2026-1</h1>
+        <p class="header-authors">
+          Daniel Santiago Polanco Reyes &nbsp;&bull;&nbsp; Juan Camilo Perdomo Medina
+        </p>
+        <p class="header-orcid">
+          <a href="https://orcid.org/0009-0003-5546-4451" target="_blank" rel="noopener">
+            <img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID" class="orcid-icon" />
+            0009-0003-5546-4451
+          </a>
+          &nbsp;&nbsp;
+          <a href="https://orcid.org/0009-0001-7873-4018" target="_blank" rel="noopener">
+            <img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID" class="orcid-icon" />
+            0009-0001-7873-4018
+          </a>
+        </p>
+      </div>
+
+      <!-- Indicador de conexión -->
+      <div class="status-pill" id="statusPill">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Conectando…</span>
+      </div>
+
+    </div>
+    <!-- Línea decorativa USCO -->
+    <div class="header-bar"></div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════
+       CAJA DE INFORMACIÓN DEL PROYECTO
+  ══════════════════════════════════════════════ -->
+  <section class="info-box">
+    <p>
+      Sistema de monitoreo de temperatura en tiempo real basado en el sensor
+      <strong>PT100</strong>. La señal es acondicionada mediante un puente de
+      Wheatstone y un amplificador de instrumentación <strong>INA333</strong>,
+      convertida digitalmente con el ADC <strong>ADS1115</strong> y transmitida
+      vía WiFi por una <strong>ESP32 DevKit</strong> (ESP-IDF v5.4, dual-core)
+      hacia <strong>Firebase Realtime Database</strong>, donde esta página la
+      visualiza en tiempo real. &nbsp;
+      <em>Ingeniería Electrónica – Universidad Surcolombiana.</em>
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       CONTENIDO PRINCIPAL
+  ══════════════════════════════════════════════ -->
+  <main class="main-content">
+
+    <!-- ── Columna izquierda: tarjetas ──────────── -->
+    <div class="cards-col">
+      <div class="cards-grid">
+
+        <div class="card card-green">
+          <span class="card-label">Temp. Actual</span>
+          <span class="card-value" id="cActual">--.-</span>
+          <span class="card-unit">°C</span>
+        </div>
+
+        <div class="card card-red">
+          <span class="card-label">Temp. Más Alta</span>
+          <span class="card-value" id="cMax">--.-</span>
+          <span class="card-unit">°C</span>
+          <span class="card-time" id="cMaxTime">--:--:--</span>
+        </div>
+
+        <div class="card card-blue">
+          <span class="card-label">Temp. Más Baja</span>
+          <span class="card-value" id="cMin">--.-</span>
+          <span class="card-unit">°C</span>
+          <span class="card-time" id="cMinTime">--:--:--</span>
+        </div>
+
+        <div class="card card-gray">
+          <span class="card-label">Temp. Promedio</span>
+          <span class="card-value" id="cAvg">--.-</span>
+          <span class="card-unit">°C</span>
+        </div>
+
+      </div>
+
+      <!-- Lecturas totales -->
+      <p class="readings-count">
+        Lecturas: <strong id="readingsCount">0</strong>
+      </p>
     </div>
 
-    <script src="script.js"></script>
+    <!-- ── Columna derecha: gráfica ─────────────── -->
+    <div class="chart-col">
+      <div class="chart-wrap">
+        <canvas id="tempChart"></canvas>
+      </div>
+      <p class="chart-caption">Actualización de datos cada 1.5 seg &nbsp;|&nbsp; Firebase Realtime DB</p>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════
+       PIE DE PÁGINA
+  ══════════════════════════════════════════════ -->
+  <footer class="footer">
+    ESP32 DevKit &nbsp;·&nbsp; ESP-IDF v5.4 &nbsp;·&nbsp;
+    Firebase RTDB &nbsp;·&nbsp; Circuitos DC &nbsp;·&nbsp; USCO 2026-1
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>

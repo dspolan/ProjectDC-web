@@ -1,59 +1,423 @@
-/* Configuración general */
+/* ════════════════════════════════════════════════════
+   Proyecto Final Circuitos DC 2026-1
+   Daniel Polanco & Juan Perdomo – USCO
+   style.css
+   ════════════════════════════════════════════════════ */
+
+/* ── Variables ──────────────────────────────────────── */
+:root {
+  /* Colores institucionales USCO */
+  --usco-red:    #8b1a1a;
+  --usco-dark:   #1a1a2e;
+  --usco-border: #c0392b;
+
+  /* Tarjetas */
+  --c-green:  #2e7d32;
+  --c-red:    #c62828;
+  --c-blue:   #1565c0;
+  --c-gray:   #616161;
+
+  /* Fondos */
+  --bg-page:    #f4f5f7;
+  --bg-white:   #ffffff;
+  --bg-info:    #e9eaec;
+  --bg-header:  #ffffff;
+
+  /* Tipografía */
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  /* Bordes */
+  --radius-card: 10px;
+  --radius-box:  8px;
+
+  /* Sombra sutil */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.10);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.12);
+
+  /* Transición */
+  --t-fast: .25s ease;
+}
+
+/* ── Reset ──────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+img { max-width: 100%; display: block; }
+
+/* ── Base ───────────────────────────────────────────── */
 body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #0f172a; /* Azul muy oscuro */
-    color: #f8fafc;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  font-family: var(--font-body);
+  background: var(--bg-page);
+  color: #1a1a2e;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.main-container {
-    text-align: center;
+/* ════════════════════════════════════════════════════
+   HEADER
+   ════════════════════════════════════════════════════ */
+.header {
+  background: var(--bg-header);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-h1 {
-    font-weight: 300;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
+.header-inner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 28px 10px;
+}
+
+/* Logo */
+.logo-wrap { flex-shrink: 0; }
+
+.logo-img {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+}
+
+.logo-text {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.logo-text-main {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--usco-red);
+  line-height: 1;
+}
+.logo-text-sub {
+  font-size: .68rem;
+  color: #555;
+  letter-spacing: .3px;
+  line-height: 1.4;
+}
+
+/* Info de título */
+.header-info { text-align: center; }
+
+.header-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 3.5vw, 2rem);
+  font-weight: 800;
+  color: var(--usco-dark);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  margin-bottom: 5px;
+}
+
+.header-authors {
+  font-size: clamp(.78rem, 1.8vw, .95rem);
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.header-orcid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: .72rem;
+}
+
+.header-orcid a {
+  color: #1a7340;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--t-fast);
+}
+.header-orcid a:hover { color: #0d5228; text-decoration: underline; }
+
+.orcid-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
 }
 
 /* Estado de conexión */
-.status {
-    font-size: 0.8rem;
-    color: #22c55e;
-    margin-bottom: 20px;
-    text-transform: uppercase;
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #f1f3f5;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: .72rem;
+  font-weight: 500;
+  color: #555;
+  white-space: nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.status-pill.live {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #2e7d32;
+}
+.status-pill.error {
+  background: #ffebee;
+  border-color: #ef9a9a;
+  color: #c62828;
 }
 
-/* La tarjeta del sensor */
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #bdbdbd;
+  flex-shrink: 0;
+  transition: background var(--t-fast), box-shadow var(--t-fast);
+}
+.status-pill.live .status-dot {
+  background: #43a047;
+  box-shadow: 0 0 0 3px rgba(67,160,71,.25);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.status-pill.error .status-dot { background: #e53935; }
+
+@keyframes pulse-dot {
+  0%,100% { box-shadow: 0 0 0 3px rgba(67,160,71,.25); }
+  50%      { box-shadow: 0 0 0 6px rgba(67,160,71,.08); }
+}
+
+/* Barra decorativa roja USCO */
+.header-bar {
+  height: 4px;
+  background: linear-gradient(90deg, var(--usco-red) 0%, #e53935 50%, var(--usco-red) 100%);
+}
+
+/* ════════════════════════════════════════════════════
+   CAJA DE INFORMACIÓN
+   ════════════════════════════════════════════════════ */
+.info-box {
+  background: var(--bg-info);
+  border-left: 4px solid var(--usco-red);
+  margin: 20px 28px 0;
+  padding: 14px 20px;
+  border-radius: 0 var(--radius-box) var(--radius-box) 0;
+  font-size: clamp(.82rem, 1.6vw, .93rem);
+  line-height: 1.6;
+  color: #2d2d2d;
+}
+
+/* ════════════════════════════════════════════════════
+   CONTENIDO PRINCIPAL
+   ════════════════════════════════════════════════════ */
+.main-content {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 20px;
+  padding: 20px 28px 10px;
+  flex: 1;
+}
+
+/* ── Tarjetas ───────────────────────────────────────── */
+.cards-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+}
+
 .card {
-    background: #1e293b;
-    padding: 50px 80px;
-    border-radius: 30px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    border: 1px solid #334155;
+  border-radius: var(--radius-card);
+  padding: 16px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #fff;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+  cursor: default;
+  min-height: 110px;
+  position: relative;
+  overflow: hidden;
 }
 
-/* El valor numérico */
-#temp-val {
-    font-size: 6rem;
-    font-weight: 800;
-    color: #38bdf8; /* Color celeste brillante */
-    transition: all 0.4s ease; /* Transición suave cuando cambia el número */
+/* Brillo sutil en hover */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background var(--t-fast);
+}
+.card:hover::after { background: rgba(255,255,255,.06); }
+.card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+
+/* Flash de actualización */
+.card.flash { animation: card-flash .4s ease; }
+@keyframes card-flash {
+  0%   { filter: brightness(1); }
+  50%  { filter: brightness(1.2); }
+  100% { filter: brightness(1); }
 }
 
-.unit {
-    font-size: 2rem;
-    color: #64748b;
-    margin-left: 10px;
+.card-green { background: linear-gradient(135deg, var(--c-green), #388e3c); }
+.card-red   { background: linear-gradient(135deg, var(--c-red),   #d32f2f); }
+.card-blue  { background: linear-gradient(135deg, var(--c-blue),  #1976d2); }
+.card-gray  { background: linear-gradient(135deg, var(--c-gray),  #757575); }
+
+.card-label {
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  opacity: .85;
+  line-height: 1;
 }
 
+.card-value {
+  font-family: var(--font-display);
+  font-size: 2.3rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 3px 0 1px;
+  transition: color var(--t-fast);
+}
+
+.card-unit {
+  font-size: .78rem;
+  font-weight: 600;
+  opacity: .8;
+}
+
+.card-time {
+  font-size: .62rem;
+  opacity: .75;
+  margin-top: 3px;
+  font-style: italic;
+}
+
+.readings-count {
+  font-size: .75rem;
+  color: #888;
+  text-align: center;
+}
+.readings-count strong { color: var(--usco-red); }
+
+/* ── Gráfica ────────────────────────────────────────── */
+.chart-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chart-wrap {
+  background: var(--bg-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-md);
+  padding: 16px 16px 10px;
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 260px;
+}
+
+.chart-wrap canvas {
+  width: 100% !important;
+}
+
+.chart-caption {
+  font-size: .72rem;
+  color: #888;
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════
+   FOOTER
+   ════════════════════════════════════════════════════ */
 .footer {
-    margin-top: 30px;
-    color: #475569;
-    font-size: 0.9rem;
+  font-size: .69rem;
+  color: #aaa;
+  text-align: center;
+  padding: 14px 0 16px;
+  letter-spacing: .3px;
+}
+
+/* ════════════════════════════════════════════════════
+   RESPONSIVE – TABLET (≤ 900px)
+   ════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .cards-col {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .cards-grid {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .chart-wrap { min-height: 220px; }
+}
+
+/* ════════════════════════════════════════════════════
+   RESPONSIVE – MÓVIL (≤ 600px)
+   ════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .header-inner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    justify-items: center;
+    gap: 10px;
+    padding: 14px 16px 10px;
+  }
+
+  .logo-img { height: 54px; }
+
+  .header-info { text-align: center; }
+
+  .header-orcid { justify-content: center; }
+
+  .status-pill { margin: 0 auto; }
+
+  .info-box {
+    margin: 14px 14px 0;
+    padding: 12px 14px;
+  }
+
+  .main-content {
+    padding: 14px 14px 8px;
+    gap: 14px;
+  }
+
+  .card { min-height: 90px; }
+  .card-value { font-size: 1.9rem; }
+
+  .chart-wrap { min-height: 200px; }
+}
+
+/* ════════════════════════════════════════════════════
+   RESPONSIVE – MÓVIL PEQUEÑO (≤ 380px)
+   ════════════════════════════════════════════════════ */
+@media (max-width: 380px) {
+  .header-title { font-size: 1.1rem; }
+  .card-value { font-size: 1.6rem; }
+  .cards-grid { gap: 8px; }
 }
