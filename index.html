@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Project DC</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+
+    <div class="main-container">
+        <h1>Temperatura Realtime</h1>
+        <div id="status-label" class="status">Conectando...</div>
+        
+        <div class="card">
+            <div class="temp-wrapper">
+                <span id="temp-val">--</span>
+                <span class="unit">°C</span>
+            </div>
+        </div>
+        
+        <p class="footer">Actualización cada 1.5s</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
