@@ -64,9 +64,9 @@
     <p>
       Sistema de monitoreo de temperatura en tiempo real basado en el sensor
       <strong>PT100</strong>. La señal es acondicionada mediante un puente de
-      Wheatstone y un amplificador de instrumentación <strong>INA333</strong>,
-      convertida digitalmente con el ADC <strong>ADS1115</strong> y transmitida
-      vía WiFi por una <strong>ESP32 DevKit</strong> (ESP-IDF v5.4, dual-core)
+      Wheatstone y un amplificador de instrumentación <strong>AD620</strong>,
+      convertida digitalmente con el <strong>ADC interno del ESP32</strong> y transmitida
+      vía WiFi por una <strong>ESP32 DevKit</strong> (MicroPython, Thonny IDE)
       hacia <strong>Firebase Realtime Database</strong>, donde esta página la
       visualiza en tiempo real. &nbsp;
       <em>Ingeniería Electrónica – Universidad Surcolombiana.</em>
@@ -121,7 +121,7 @@
       <div class="chart-wrap">
         <canvas id="tempChart"></canvas>
       </div>
-      <p class="chart-caption">Actualización de datos cada 1.5 seg &nbsp;|&nbsp; Firebase Realtime DB</p>
+      <p class="chart-caption">Actualización de datos cada 1 seg &nbsp;|&nbsp; Firebase Realtime DB</p>
     </div>
 
   </main>
@@ -130,8 +130,8 @@
        PIE DE PÁGINA
   ══════════════════════════════════════════════ -->
   <footer class="footer">
-    ESP32 DevKit &nbsp;·&nbsp; ESP-IDF v5.4 &nbsp;·&nbsp;
-    Firebase RTDB &nbsp;·&nbsp; Circuitos DC &nbsp;·&nbsp; USCO 2026-1
+    ESP32 DevKit &nbsp;·&nbsp; MicroPython &nbsp;·&nbsp;
+    Thonny IDE &nbsp;·&nbsp; Firebase RTDB &nbsp;·&nbsp; Circuitos DC &nbsp;·&nbsp; USCO 2026-1
   </footer>
 
   <script src="script.js"></script>
