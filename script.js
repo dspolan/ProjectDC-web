@@ -471,39 +471,28 @@ async function fetchFirebase() {
 
     if (isNaN(temp)) throw new Error('Valor NaN');
 
-    /* ── Comparar hora del dato con hora actual del navegador ──
-       La ESP32 envía "hora" como "HH:MM:SS" en hora Colombia (UTC-5).
-       El navegador también está en Colombia, así que comparamos directo.
-       Si la diferencia es mayor a TIMEOUT_S segundos → desconectado.    */
-    const TIMEOUT_S = 25;
+    /* ── Comparar serverTime (epoch ms de Firebase) con Date.now() ──
+       Firebase pone la hora exacta del servidor cuando recibe el dato.
+       Ambos son epoch real en ms → comparación perfecta y confiable.   */
+    const serverTime = data?.serverTime;
 
-    if (hora && hora !== '--:--:--') {
-      const ahora     = new Date();
-      const [hh, mm, ss] = hora.split(':').map(Number);
+    if (serverTime && typeof serverTime === 'number') {
+      const edadMs = Date.now() - serverTime;
 
-      /* Construir Date del dato en el mismo día del navegador */
-      const datoDt = new Date();
-      datoDt.setHours(hh, mm, ss, 0);
-
-      /* Si el dato parece ser del día anterior (ej. dato 23:59, ahora 00:01) */
-      let diffSeg = (ahora - datoDt) / 1000;
-      if (diffSeg < -60) diffSeg += 86400;   /* sumar un día */
-      if (diffSeg > 86340) diffSeg -= 86400; /* restar un día */
-
-      if (diffSeg >= 0 && diffSeg <= TIMEOUT_S) {
+      if (edadMs >= 0 && edadMs <= TIMEOUT_MS) {
         /* Dato reciente → ESP32 activa */
-        lastTs          = ts;
+        lastTs          = serverTime;
         lastTsChangedAt = Date.now();
         errorConsecutivos = 0;
         setEstado('live');
         actualizarUI(temp, hora);
         actualizarGrafica(temp, hora);
       } else {
-        /* Dato antiguo o futuro → ESP32 desconectada */
+        /* Dato antiguo → ESP32 desconectada */
         setEstado('error');
       }
     } else {
-      /* Sin campo hora → fallback sin detección */
+      /* Sin serverTime → fallback */
       errorConsecutivos = 0;
       setEstado('live');
       actualizarUI(temp, hora);
