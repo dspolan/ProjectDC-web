@@ -3,32 +3,32 @@
    Daniel Polanco & Juan Perdomo – USCO
    script.js
    ════════════════════════════════════════════════════ */
- 
+
 /* ── Configuración ────────────────────────────────── */
 const FIREBASE_URL  = 'https://project-dc-pt100-default-rtdb.firebaseio.com/sensor.json';
 const POLL_MS       = 1000;
 const MAX_PUNTOS    = 30;
 const TIMEOUT_MS    = 25000;  /* 25 s sin dato nuevo → desconectado */
 const TEMP_ALERTA   = 65.0;
- 
+
 /* ── Estado ───────────────────────────────────────── */
 const histTemp  = [];
 const histTime  = [];
- 
+
 let statMax     = null;
 let statMaxTime = '--:--:--';
 let statMin     = null;
 let statMinTime = '--:--:--';
 let statSum     = 0;
 let statCount   = 0;
- 
+
 let lastTs            = null;
 let lastTsChangedAt   = null;
 let errorConsecutivos = 0;
 let alertaActiva      = false;
 let audioCtx          = null;
 let alarmaInterval    = null;
- 
+
 /* ── Elementos del DOM ────────────────────────────── */
 const elActual    = document.getElementById('cActual');
 const elMax       = document.getElementById('cMax');
@@ -39,13 +39,13 @@ const elAvg       = document.getElementById('cAvg');
 const elCount     = document.getElementById('readingsCount');
 const elStatusPill= document.getElementById('statusPill');
 const elStatusTxt = document.getElementById('statusText');
- 
+
 /* ════════════════════════════════════════════════════
    INYECTAR ESTILOS DE ALERTA
    ════════════════════════════════════════════════════ */
 const estilosAlerta = document.createElement('style');
 estilosAlerta.textContent = `
- 
+
   /* ── Overlay de borde parpadeante ── */
   #alertaOverlay {
     display: none;
@@ -78,7 +78,7 @@ estilosAlerta.textContent = `
         0 0 100px 40px rgba(255, 0, 0, 0.8);
     }
   }
- 
+
   /* ── Flash rojo de pantalla completa ── */
   #alertaFlash {
     display: none;
@@ -96,7 +96,7 @@ estilosAlerta.textContent = `
     0%   { background: rgba(180, 0, 0, 0); }
     100% { background: rgba(180, 0, 0, 0.08); }
   }
- 
+
   /* ── Banner central ── */
   #alertaBanner {
     display: none;
@@ -129,7 +129,7 @@ estilosAlerta.textContent = `
     0%   { box-shadow: 0 0 0 4px rgba(255,0,0,0.3), 0 0 40px rgba(255,0,0,0.5), 0 20px 60px rgba(0,0,0,0.5); }
     100% { box-shadow: 0 0 0 8px rgba(255,0,0,0.6), 0 0 90px rgba(255,0,0,0.9), 0 20px 80px rgba(0,0,0,0.7); }
   }
- 
+
   .alerta-icono-wrap {
     font-size: 3.5rem;
     animation: iconoLatido 0.4s ease-in-out infinite alternate;
@@ -140,7 +140,7 @@ estilosAlerta.textContent = `
     0%   { transform: scale(1)   rotate(-8deg); filter: drop-shadow(0 0 6px rgba(255,200,0,0.6)); }
     100% { transform: scale(1.2) rotate(8deg);  filter: drop-shadow(0 0 20px rgba(255,100,0,1)); }
   }
- 
+
   .alerta-titulo {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 2.6rem;
@@ -156,7 +156,7 @@ estilosAlerta.textContent = `
     0%   { opacity: 1;    text-shadow: 0 0 10px rgba(255,100,100,0.8); }
     100% { opacity: 0.85; text-shadow: 0 0 40px rgba(255,50,50,1), 0 0 80px rgba(255,0,0,0.6); }
   }
- 
+
   #alertaTemp {
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 3.8rem;
@@ -172,7 +172,7 @@ estilosAlerta.textContent = `
     0%   { text-shadow: 0 0 10px rgba(255,235,59,0.5); }
     100% { text-shadow: 0 0 40px rgba(255,235,59,1), 0 0 70px rgba(255,200,0,0.8); }
   }
- 
+
   .alerta-sub {
     font-size: 1rem;
     font-weight: 600;
@@ -181,7 +181,7 @@ estilosAlerta.textContent = `
     display: block;
     margin-top: 6px;
   }
- 
+
   .alerta-linea {
     width: 60px;
     height: 3px;
@@ -194,7 +194,7 @@ estilosAlerta.textContent = `
     0%   { width: 40px;  opacity: 0.5; }
     100% { width: 120px; opacity: 1; }
   }
- 
+
   /* ── Esquinas parpadeantes ── */
   .alerta-esquina {
     display: none;
@@ -222,7 +222,7 @@ estilosAlerta.textContent = `
     0%   { opacity: 0.3; box-shadow: 0 0 5px  rgba(255,23,68,0.5); }
     100% { opacity: 1;   box-shadow: 0 0 25px rgba(255,23,68,1); }
   }
- 
+
   @media (max-width: 600px) {
     #alertaBanner { padding: 24px 28px; min-width: 280px; }
     .alerta-titulo { font-size: 2rem; }
@@ -230,25 +230,25 @@ estilosAlerta.textContent = `
   }
 `;
 document.head.appendChild(estilosAlerta);
- 
+
 /* ── Crear elementos de alerta ────────────────────── */
 // Overlay borde
 const alertaOverlay = document.createElement('div');
 alertaOverlay.id = 'alertaOverlay';
 document.body.appendChild(alertaOverlay);
- 
+
 // Flash pantalla
 const alertaFlash = document.createElement('div');
 alertaFlash.id = 'alertaFlash';
 document.body.appendChild(alertaFlash);
- 
+
 // Esquinas
 ['eq-tl','eq-tr','eq-bl','eq-br'].forEach(cls => {
   const el = document.createElement('div');
   el.className = `alerta-esquina ${cls}`;
   document.body.appendChild(el);
 });
- 
+
 // Banner central
 const alertaBanner = document.createElement('div');
 alertaBanner.id = 'alertaBanner';
@@ -260,7 +260,7 @@ alertaBanner.innerHTML = `
   <span class="alerta-sub">🌡️ Temperatura alarmante — el sistema necesita refrigerarse</span>
 `;
 document.body.appendChild(alertaBanner);
- 
+
 /* ════════════════════════════════════════════════════
    SONIDO DE ALARMA
    ════════════════════════════════════════════════════ */
@@ -269,7 +269,7 @@ function iniciarAudio() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
 }
- 
+
 function beepAlarma() {
   if (!audioCtx) return;
   const patron = [
@@ -292,18 +292,18 @@ function beepAlarma() {
     t += d + 0.05;
   });
 }
- 
+
 function activarAlarma() {
   if (alarmaInterval) return;
   iniciarAudio();
   beepAlarma();
   alarmaInterval = setInterval(beepAlarma, 1800);
 }
- 
+
 function detenerAlarma() {
   if (alarmaInterval) { clearInterval(alarmaInterval); alarmaInterval = null; }
 }
- 
+
 /* ════════════════════════════════════════════════════
    GESTIONAR ALERTA
    ════════════════════════════════════════════════════ */
@@ -329,7 +329,7 @@ function verificarAlerta(temp) {
     }
   }
 }
- 
+
 /* ════════════════════════════════════════════════════
    INICIALIZAR CHART.JS
    ════════════════════════════════════════════════════ */
@@ -400,7 +400,7 @@ const chart = new Chart(ctx, {
     }
   }
 });
- 
+
 /* ════════════════════════════════════════════════════
    UTILIDADES
    ════════════════════════════════════════════════════ */
@@ -409,43 +409,43 @@ function flashCard(el) {
   void el.offsetWidth;
   el.classList.add('flash');
 }
- 
+
 function setEstado(estado) {
   elStatusPill.className = 'status-pill ' + estado;
   if (estado === 'live')  elStatusTxt.textContent = 'En vivo';
   if (estado === 'error') elStatusTxt.textContent = 'Sin señal';
   if (estado === '')      elStatusTxt.textContent = 'Conectando…';
 }
- 
+
 /* ════════════════════════════════════════════════════
    ACTUALIZAR TARJETAS
    ════════════════════════════════════════════════════ */
 function actualizarUI(temp, hora) {
   elActual.textContent = temp.toFixed(1);
   flashCard(elActual.closest('.card'));
- 
+
   if (statMax === null || temp > statMax) {
     statMax = temp; statMaxTime = hora;
     flashCard(elMax.closest('.card'));
   }
   elMax.textContent     = statMax.toFixed(1);
   elMaxTime.textContent = statMaxTime;
- 
+
   if (statMin === null || temp < statMin) {
     statMin = temp; statMinTime = hora;
     flashCard(elMin.closest('.card'));
   }
   elMin.textContent     = statMin.toFixed(1);
   elMinTime.textContent = statMinTime;
- 
+
   statSum   += temp;
   statCount += 1;
   elAvg.textContent   = (statSum / statCount).toFixed(1);
   elCount.textContent = statCount;
- 
+
   verificarAlerta(temp);
 }
- 
+
 /* ════════════════════════════════════════════════════
    ACTUALIZAR GRÁFICA
    ════════════════════════════════════════════════════ */
@@ -455,7 +455,7 @@ function actualizarGrafica(temp, hora) {
   if (histTemp.length > MAX_PUNTOS) { histTemp.shift(); histTime.shift(); }
   chart.update();
 }
- 
+
 /* ════════════════════════════════════════════════════
    POLLING FIREBASE
    ════════════════════════════════════════════════════ */
@@ -463,47 +463,60 @@ async function fetchFirebase() {
   try {
     const resp = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
- 
+
     const data = await resp.json();
     const temp = parseFloat(data?.temperatura);
     const hora = data?.hora || '--:--:--';
     const ts   = data?.timestamp_ms;
- 
+
     if (isNaN(temp)) throw new Error('Valor NaN');
- 
-    if (ts !== undefined && ts !== null) {
-      /* Comparar timestamp del dato contra la hora actual del navegador
-         Si el dato tiene más de TIMEOUT_MS ms de antigüedad → desconectado */
-      const ahora   = Date.now();
-      const edadDato = ahora - ts;   /* ts viene en ms desde epoch */
- 
-      if (edadDato <= TIMEOUT_MS) {
+
+    /* ── Comparar hora del dato con hora actual del navegador ──
+       La ESP32 envía "hora" como "HH:MM:SS" en hora Colombia (UTC-5).
+       El navegador también está en Colombia, así que comparamos directo.
+       Si la diferencia es mayor a TIMEOUT_S segundos → desconectado.    */
+    const TIMEOUT_S = 25;
+
+    if (hora && hora !== '--:--:--') {
+      const ahora     = new Date();
+      const [hh, mm, ss] = hora.split(':').map(Number);
+
+      /* Construir Date del dato en el mismo día del navegador */
+      const datoDt = new Date();
+      datoDt.setHours(hh, mm, ss, 0);
+
+      /* Si el dato parece ser del día anterior (ej. dato 23:59, ahora 00:01) */
+      let diffSeg = (ahora - datoDt) / 1000;
+      if (diffSeg < -60) diffSeg += 86400;   /* sumar un día */
+      if (diffSeg > 86340) diffSeg -= 86400; /* restar un día */
+
+      if (diffSeg >= 0 && diffSeg <= TIMEOUT_S) {
         /* Dato reciente → ESP32 activa */
         lastTs          = ts;
-        lastTsChangedAt = ahora;
+        lastTsChangedAt = Date.now();
         errorConsecutivos = 0;
         setEstado('live');
         actualizarUI(temp, hora);
         actualizarGrafica(temp, hora);
       } else {
-        /* Dato antiguo → ESP32 desconectada, no actualizar UI */
+        /* Dato antiguo o futuro → ESP32 desconectada */
         setEstado('error');
       }
     } else {
-      /* Sin campo ts → fallback sin detección */
+      /* Sin campo hora → fallback sin detección */
       errorConsecutivos = 0;
       setEstado('live');
       actualizarUI(temp, hora);
       actualizarGrafica(temp, hora);
     }
- 
+
   } catch (err) {
     errorConsecutivos++;
     console.warn('[Firebase] Error:', err.message);
     if (errorConsecutivos >= 3) setEstado('error');
   }
 }
- 
+
 /* ════════════════════════════════════════════════════
    ARRANQUE
    ════════════════════════════════════════════════════ */
@@ -511,4 +524,3 @@ setEstado('error');
 fetchFirebase();
 setInterval(fetchFirebase, POLL_MS);
 document.addEventListener('click', iniciarAudio, { once: true });
- 
