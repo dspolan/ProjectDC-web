@@ -5,14 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Proyecto Final Circuitos DC 2026-1 – USCO</title>
   <link rel="icon" type="image/png" href="image/icon.png">
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
-
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -20,42 +16,39 @@
   <!-- ══════════════════════════════════════════════
        HEADER INSTITUCIONAL
   ══════════════════════════════════════════════ -->
-<header class="header">
-  <div class="header-inner">
+  <header class="header">
+    <div class="header-inner">
 
-    <div class="logo-wrap">
-      <img 
-        src="image/ingenieria.png" 
-        alt="Facultad de Ingeniería" 
-        class="logo-img"
-      />
+      <div class="logo-wrap">
+        <img src="image/ingenieria.png" alt="Facultad de Ingeniería" class="logo-img" />
+      </div>
+
+      <div class="header-info">
+        <h1 class="header-title">Proyecto Final Circuitos DC 2026-1</h1>
+        <p class="header-authors">
+          Daniel Santiago Polanco Reyes &nbsp;&bull;&nbsp; Juan Camilo Perdomo Medina
+        </p>
+        <p class="header-orcid">
+          <a href="https://orcid.org/0009-0003-5546-4451" target="_blank" rel="noopener">
+            <img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID" class="orcid-icon" />
+            0009-0003-5546-4451
+          </a>
+          &nbsp;&nbsp;
+          <a href="https://orcid.org/0009-0001-7873-4018" target="_blank" rel="noopener">
+            <img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID" class="orcid-icon" />
+            0009-0001-7873-4018
+          </a>
+        </p>
+      </div>
+
+      <div class="status-pill" id="statusPill">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Conectando…</span>
+      </div>
+
     </div>
-
-    <div class="header-info">
-      <h1 class="header-title">Proyecto Final Circuitos DC 2026-1</h1>
-      <p class="header-authors">
-        Daniel Santiago Polanco Reyes &nbsp;&bull;&nbsp; Juan Camilo Perdomo Medina
-      </p>
-      <p class="header-orcid">
-        <a href="https://orcid.org/0009-0003-5546-4451" target="_blank" rel="noopener">
-          <img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID" class="orcid-icon" />
-          0009-0003-5546-4451
-        </a>
-        &nbsp;&nbsp;
-        <a href="https://orcid.org/0009-0001-7873-4018" target="_blank" rel="noopener">
-          <img src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" alt="ORCID" class="orcid-icon" />
-          0009-0001-7873-4018
-        </a>
-      </p>
-    </div>
-
-    <div class="status-pill" id="statusPill">
-      <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">Conectando…</span>
-    </div>
-
-  </div> <div class="header-bar"></div>
-</header>
+    <div class="header-bar"></div>
+  </header>
 
   <!-- ══════════════════════════════════════════════
        CAJA DE INFORMACIÓN DEL PROYECTO
@@ -110,7 +103,6 @@
 
       </div>
 
-      <!-- Lecturas totales -->
       <p class="readings-count">
         Lecturas: <strong id="readingsCount">0</strong>
       </p>
