@@ -5,7 +5,7 @@
    ════════════════════════════════════════════════════
  
    Flujo:
-     1. fetchFirebase() consulta Firebase RTDB cada 1.5 s
+     1. fetchFirebase() consulta Firebase RTDB cada ! s
      2. Se compara el timestamp "ts" recibido con el anterior
         → Si el ts no cambia en TIMEOUT_MS ms = ESP32 desconectada
      3. Se actualiza la gráfica con Chart.js (historial local)
@@ -14,7 +14,7 @@
  
 /* ── Configuración ────────────────────────────────── */
 const FIREBASE_URL = 'https://project-dc-pt100-default-rtdb.firebaseio.com/sensor.json';
-const POLL_MS      = 1500;   /* Intervalo de consulta en ms         */
+const POLL_MS      = 1000;   /* Intervalo de consulta en ms         */
 const MAX_PUNTOS   = 60;     /* Puntos visibles en la gráfica       */
 const TIMEOUT_MS   = 8000;   /* Si el ts no cambia en 8 s → offline */
  
