@@ -3,7 +3,7 @@
    Daniel Polanco & Juan Perdomo – USCO
    script.js
    ════════════════════════════════════════════════════
-
+ 
    Flujo:
      1. fetchFirebase() consulta Firebase RTDB cada 1.5 s
      2. Se compara el timestamp "ts" recibido con el anterior
@@ -11,28 +11,28 @@
      3. Se actualiza la gráfica con Chart.js (historial local)
      4. Se actualizan las tarjetas (actual, máx, mín, promedio)
    ════════════════════════════════════════════════════ */
-
+ 
 /* ── Configuración ────────────────────────────────── */
 const FIREBASE_URL = 'https://project-dc-pt100-default-rtdb.firebaseio.com/sensor.json';
 const POLL_MS      = 1500;   /* Intervalo de consulta en ms         */
 const MAX_PUNTOS   = 60;     /* Puntos visibles en la gráfica       */
 const TIMEOUT_MS   = 8000;   /* Si el ts no cambia en 8 s → offline */
-
+ 
 /* ── Estado ───────────────────────────────────────── */
 const histTemp  = [];
 const histTime  = [];
-
+ 
 let statMax     = null;
 let statMaxTime = '--:--:--';
 let statMin     = null;
 let statMinTime = '--:--:--';
 let statSum     = 0;
 let statCount   = 0;
-
+ 
 let lastTs          = null;   /* Último timestamp recibido de Firebase */
 let lastTsChangedAt = null;   /* Momento (Date.now()) en que cambió ts */
 let errorConsecutivos = 0;
-
+ 
 /* ── Elementos del DOM ────────────────────────────── */
 const elActual    = document.getElementById('cActual');
 const elMax       = document.getElementById('cMax');
@@ -44,7 +44,7 @@ const elCount     = document.getElementById('readingsCount');
 const elStatusDot = document.getElementById('statusDot');
 const elStatusTxt = document.getElementById('statusText');
 const elStatusPill= document.getElementById('statusPill');
-
+ 
 /* ════════════════════════════════════════════════════
    INICIALIZAR CHART.JS
    ════════════════════════════════════════════════════ */
@@ -137,7 +137,7 @@ const chart = new Chart(ctx, {
     }
   }
 });
-
+ 
 /* ════════════════════════════════════════════════════
    UTILIDADES
    ════════════════════════════════════════════════════ */
@@ -147,29 +147,29 @@ function horaActual() {
     .map(n => String(n).padStart(2, '0'))
     .join(':');
 }
-
+ 
 function flashCard(el) {
   el.classList.remove('flash');
   void el.offsetWidth;
   el.classList.add('flash');
 }
-
+ 
 function setEstado(estado) {
   elStatusPill.className = 'status-pill ' + estado;
   if (estado === 'live')  elStatusTxt.textContent = 'En vivo';
   if (estado === 'error') elStatusTxt.textContent = 'Sin señal';
   if (estado === '')      elStatusTxt.textContent = 'Conectando…';
 }
-
+ 
 /* ════════════════════════════════════════════════════
    ACTUALIZAR TARJETAS
    ════════════════════════════════════════════════════ */
 function actualizarUI(temp) {
   const hora = horaActual();
-
+ 
   elActual.textContent = temp.toFixed(1);
   flashCard(elActual.closest('.card'));
-
+ 
   if (statMax === null || temp > statMax) {
     statMax     = temp;
     statMaxTime = hora;
@@ -177,7 +177,7 @@ function actualizarUI(temp) {
   }
   elMax.textContent     = statMax.toFixed(1);
   elMaxTime.textContent = statMaxTime;
-
+ 
   if (statMin === null || temp < statMin) {
     statMin     = temp;
     statMinTime = hora;
@@ -185,28 +185,28 @@ function actualizarUI(temp) {
   }
   elMin.textContent     = statMin.toFixed(1);
   elMinTime.textContent = statMinTime;
-
+ 
   statSum   += temp;
   statCount += 1;
   elAvg.textContent   = (statSum / statCount).toFixed(1);
   elCount.textContent = statCount;
 }
-
+ 
 /* ════════════════════════════════════════════════════
    ACTUALIZAR GRÁFICA
    ════════════════════════════════════════════════════ */
 function actualizarGrafica(temp) {
   histTemp.push(temp);
   histTime.push(horaActual());
-
+ 
   if (histTemp.length > MAX_PUNTOS) {
     histTemp.shift();
     histTime.shift();
   }
-
+ 
   chart.update();
 }
-
+ 
 /* ════════════════════════════════════════════════════
    POLLING FIREBASE
    ════════════════════════════════════════════════════
@@ -218,13 +218,13 @@ async function fetchFirebase() {
   try {
     const resp = await fetch(FIREBASE_URL, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
+ 
     const data = await resp.json();
     const temp = parseFloat(data?.temperatura);
-    const ts   = data?.ts;                      /* Timestamp enviado por la ESP32 */
-
+    const ts   = data?.timestamp_ms;                      /* Timestamp enviado por la ESP32 */
+ 
     if (isNaN(temp)) throw new Error('Valor NaN recibido');
-
+ 
     /* ── Detección de desconexión por timestamp ── */
     if (ts !== undefined && ts !== null) {
       if (ts !== lastTs) {
@@ -250,17 +250,18 @@ async function fetchFirebase() {
       actualizarUI(temp);
       actualizarGrafica(temp);
     }
-
+ 
   } catch (err) {
     errorConsecutivos++;
     console.warn('[Firebase] Error de lectura:', err.message);
     if (errorConsecutivos >= 3) setEstado('error');
   }
 }
-
+ 
 /* ════════════════════════════════════════════════════
    ARRANQUE
    ════════════════════════════════════════════════════ */
 setEstado('');
 fetchFirebase();
 setInterval(fetchFirebase, POLL_MS);
+ 
