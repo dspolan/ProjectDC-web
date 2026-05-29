@@ -5,18 +5,18 @@
    ════════════════════════════════════════════════════
  
    Flujo:
-     1. fetchFirebase() consulta Firebase RTDB cada ! s
-     2. Se compara el timestamp "ts" recibido con el anterior
-        → Si el ts no cambia en TIMEOUT_MS ms = ESP32 desconectada
-     3. Se actualiza la gráfica con Chart.js (historial local)
-     4. Se actualizan las tarjetas (actual, máx, mín, promedio)
+     1. fetchFirebase() consulta Firebase RTDB cada 1 s
+     2. Compara timestamp_ms para detectar si la ESP32
+        sigue activa o se desconectó
+     3. Muestra fecha y hora exacta de cada medición
+        en la gráfica y las tarjetas
    ════════════════════════════════════════════════════ */
  
 /* ── Configuración ────────────────────────────────── */
 const FIREBASE_URL = 'https://project-dc-pt100-default-rtdb.firebaseio.com/sensor.json';
-const POLL_MS      = 1000;   /* Intervalo de consulta en ms         */
-const MAX_PUNTOS   = 60;     /* Puntos visibles en la gráfica       */
-const TIMEOUT_MS   = 8000;   /* Si el ts no cambia en 8 s → offline */
+const POLL_MS      = 1000;   /* Consulta cada 1 segundo            */
+const MAX_PUNTOS   = 60;     /* Puntos visibles en la gráfica      */
+const TIMEOUT_MS   = 8000;   /* Sin cambio en 8 s → ESP32 offline  */
  
 /* ── Estado ───────────────────────────────────────── */
 const histTemp  = [];
@@ -29,8 +29,8 @@ let statMinTime = '--:--:--';
 let statSum     = 0;
 let statCount   = 0;
  
-let lastTs          = null;   /* Último timestamp recibido de Firebase */
-let lastTsChangedAt = null;   /* Momento (Date.now()) en que cambió ts */
+let lastTs          = null;
+let lastTsChangedAt = null;
 let errorConsecutivos = 0;
  
 /* ── Elementos del DOM ────────────────────────────── */
@@ -115,7 +115,7 @@ const chart = new Chart(ctx, {
         grid: { color: 'rgba(0,0,0,.06)' },
         title: {
           display: true,
-          text:    'Tiempo',
+          text:    'Hora',
           color:   '#888',
           font:    { size: 11, family: "'DM Sans', sans-serif" }
         }
@@ -141,13 +141,6 @@ const chart = new Chart(ctx, {
 /* ════════════════════════════════════════════════════
    UTILIDADES
    ════════════════════════════════════════════════════ */
-function horaActual() {
-  const d = new Date();
-  return [d.getHours(), d.getMinutes(), d.getSeconds()]
-    .map(n => String(n).padStart(2, '0'))
-    .join(':');
-}
- 
 function flashCard(el) {
   el.classList.remove('flash');
   void el.offsetWidth;
@@ -163,10 +156,9 @@ function setEstado(estado) {
  
 /* ════════════════════════════════════════════════════
    ACTUALIZAR TARJETAS
+   Usa la hora real enviada por la ESP32
    ════════════════════════════════════════════════════ */
-function actualizarUI(temp) {
-  const hora = horaActual();
- 
+function actualizarUI(temp, hora) {
   elActual.textContent = temp.toFixed(1);
   flashCard(elActual.closest('.card'));
  
@@ -194,10 +186,11 @@ function actualizarUI(temp) {
  
 /* ════════════════════════════════════════════════════
    ACTUALIZAR GRÁFICA
+   Usa la hora real enviada por la ESP32
    ════════════════════════════════════════════════════ */
-function actualizarGrafica(temp) {
+function actualizarGrafica(temp, hora) {
   histTemp.push(temp);
-  histTime.push(horaActual());
+  histTime.push(hora);
  
   if (histTemp.length > MAX_PUNTOS) {
     histTemp.shift();
@@ -209,10 +202,13 @@ function actualizarGrafica(temp) {
  
 /* ════════════════════════════════════════════════════
    POLLING FIREBASE
-   ════════════════════════════════════════════════════
-   Firebase guarda: { "temperatura": 25.3, "ts": 1748123456 }
-   "ts" es un entero que cambia con cada envío de la ESP32.
-   Si "ts" deja de cambiar más de TIMEOUT_MS → ESP32 offline.
+   Firebase guarda:
+   {
+     "temperatura" : 25.3,
+     "fecha"       : "2026-05-28",
+     "hora"        : "14:35:22",
+     "timestamp_ms": 1748123456000
+   }
    ════════════════════════════════════════════════════ */
 async function fetchFirebase() {
   try {
@@ -221,34 +217,34 @@ async function fetchFirebase() {
  
     const data = await resp.json();
     const temp = parseFloat(data?.temperatura);
-    const ts   = data?.timestamp_ms;                      /* Timestamp enviado por la ESP32 */
+    const hora = data?.hora  || '--:--:--';
+    const ts   = data?.timestamp_ms;
  
     if (isNaN(temp)) throw new Error('Valor NaN recibido');
  
     /* ── Detección de desconexión por timestamp ── */
     if (ts !== undefined && ts !== null) {
       if (ts !== lastTs) {
-        /* El timestamp cambió → ESP32 activa */
+        /* Timestamp cambió → ESP32 activa */
         lastTs          = ts;
         lastTsChangedAt = Date.now();
         errorConsecutivos = 0;
         setEstado('live');
-        actualizarUI(temp);
-        actualizarGrafica(temp);
+        actualizarUI(temp, hora);
+        actualizarGrafica(temp, hora);
       } else {
-        /* El timestamp NO cambió → verificar tiempo transcurrido */
+        /* Timestamp igual → verificar tiempo transcurrido */
         const elapsed = Date.now() - lastTsChangedAt;
         if (elapsed >= TIMEOUT_MS) {
-          setEstado('error');   /* ESP32 desconectada */
+          setEstado('error');  /* ESP32 desconectada */
         }
-        /* Si aún no supera el timeout, mantener estado actual */
       }
     } else {
-      /* Firebase no tiene campo "ts" → comportamiento anterior como fallback */
+      /* Sin campo timestamp → fallback sin detección */
       errorConsecutivos = 0;
       setEstado('live');
-      actualizarUI(temp);
-      actualizarGrafica(temp);
+      actualizarUI(temp, hora);
+      actualizarGrafica(temp, hora);
     }
  
   } catch (err) {
@@ -261,7 +257,7 @@ async function fetchFirebase() {
 /* ════════════════════════════════════════════════════
    ARRANQUE
    ════════════════════════════════════════════════════ */
-setEstado('');
+setEstado('error');  /* Inicia como desconectado */
 fetchFirebase();
 setInterval(fetchFirebase, POLL_MS);
  
